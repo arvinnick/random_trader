@@ -7,6 +7,8 @@ import json
 from platform_boundings import Oanda
 import yaml
 
+from structs import OandaOrderData
+
 app = Flask(__name__)
 with open('config.yml', 'r') as ymlfile:
     cfg = yaml.safe_load(ymlfile)
@@ -15,10 +17,10 @@ with open('config.yml', 'r') as ymlfile:
 
 
 
-@app.route('trader/<units>/<instrument>', methods=['POST'])
+@app.route('trader/<instrument>', methods=['POST'])
 async def send_order(
-        units: int,
-        instrument:str = "EUR_USD"):
+        instrument:str = "EUR_USD"
+):
     if request.method == 'POST':
         binding = request.form['binding']
         if binding == 'api':
