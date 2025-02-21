@@ -1,18 +1,26 @@
-from risk_manager import stop_loss_price_calculator, take_profit_price_calculator
-from platform_boundings import OandaBinding
-from structs import OandaOrderData
+from abc import ABC
+
+from risk_manager import stop_loss_price_calculator, take_profit_price_calculator, margin_allocator
+from platform_boundings import OandaBinding, MT5Binding
+from structs import OandaOrderData, MT5OrderData, ENUM_TRADE_REQUEST_ACTIONS, ENUM_ORDER_TYPE_FILLING, ENUM_ORDER_TYPE
 
 
-class OandaOrder:
-    pass
+class Order(ABC):
+    def levels_calculator(self):
+        pass
+    def volume_calculator(self):
+        pass
+    def order_data_constructor(self):
+        pass
+    def send_order(self):
+        pass
 
 
-class OandaOrder:
+
+class OandaOrder(Order):
     """
     an Oanda order object, which handles everything related to it
     """
-    def __init__(self, instrument:str):
-        self.instrument = instrument
 
     def create_binding(self, acc_id:str, accss_token:str):
         """
@@ -22,38 +30,22 @@ class OandaOrder:
         """
         self.binding = OandaBinding(acc_id=acc_id, accss_token=accss_token)
 
-    def stop_level_calculator(self):
+    def levels_calculator(self, instrument):
         """
         calculates the levels for stop-loss and take-profit
         :param order:
         :return:
         """
-        current_price = self.binding.current_price_retriever(self.instrument)
+        current_price = self.binding.current_price_retriever(instrument)
         self.stop_loss = stop_loss_price_calculator(current_price)
         self.take_profit = take_profit_price_calculator(current_price)
 
-    def volume_calculator(self):
-        """
-        to get the
-        :return:
-        """
-        #todo: write a function that gets the available margine, then the number of non-allocated instruments that you are going to trade on, then devide the available margin to them. after that you'll find out the volume you can put on the order
-
-    def order_object_constructor(self):
+    def order_data_constructor(self):
         """
         This function actually creates the order struct,
         :return:
         """
-        #todo: finish it after finishing the function above to fill "units". Also, use the analyzer to find the sign on units (buy or sell)
-        # self.order_object = OandaOrderData(
-        #     instrument=self.instrument,
-        #     type= 'Market', #perhaps we will change it in the future for more advanced strategies
-        #     units: str
-        #     timeInForce: str
-        #     positionFill: str
-        #     stopLossOnFill: StopLossOnFill
-        #     takeProfitOnFill: TakeProfitOnFill
-        # )
+        pass
 
     def send_order(self):
         """
@@ -61,3 +53,62 @@ class OandaOrder:
         :param order:
         :return:
         """
+        pass
+
+class MT5Order():
+    def __init__(self, direction:int, config):
+        self.config = config
+        self.binding = MT5Binding()
+        assert direction in {0,1,-1}
+        if direction == 0:
+            self.direction = None
+        elif direction == 1:
+            self.direction = ENUM_ORDER_TYPE.ORDER_TYPE_BUY
+        elif direction == -1:
+            self.direction = ENUM_ORDER_TYPE.ORDER_TYPE_SELL
+        else:
+            raise NotImplementedError(f"the direction is {direction} but it should be 0, 1 or -1")
+
+
+    def levels_calculator(self, instrument):
+        current_price = self.binding.current_price_retriever(instrument)
+        self.stop_loss = stop_loss_price_calculator(current_price)
+        self.take_profit = take_profit_price_calculator(current_price)
+
+    def volume_calculator(self):
+        user_intended_number_of_positions = self.config.USER_INTENDED_NUMBER_OF_POSITIONS
+        user_intended_symbols = self.config.USER_INTENDED_SYMBOLS
+        reserved_margin_percentage = self.config.RESERVED_MARGIN_PERCENTAGE
+        list_of_open_positions = self.binding.open_positions_retriever()
+        account_liquidity = self.binding.account_info.account_liquidity
+        allocations = margin_allocator(
+            list_of_open_positions,
+            user_intended_number_of_positions,
+            user_intended_symbols,
+            reserved_margin_percentage,
+            account_liquidity
+        )
+        return allocations
+
+    def order_data_constructor(self):
+        self.data = []
+        for instrument in self.config.INSTRUMENTS:
+            self.levels_calculator(instrument)
+            self.data.append(MT5OrderData(
+                action=ENUM_TRADE_REQUEST_ACTIONS.TRADE_ACTION_DEAL,
+                symbol=instrument,
+                volume=self.volume_calculator().get("instrument"),
+                sl=self.stop_loss,
+                tp=self.take_profit,
+                type_filling=ENUM_ORDER_TYPE_FILLING.ORDER_FILLING_IOC,
+                type=self.direction
+            ))
+
+    def send_order(self):
+        self.order_data_constructor()
+        responses = []
+        for order_data in self.data:
+            responses.append(self.binding.send_order(order_data))
+        return responses
+
+

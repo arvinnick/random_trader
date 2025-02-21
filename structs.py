@@ -81,15 +81,8 @@ class OandaOrderData(OrderData):
 class MT5OrderData(OrderData):
     """
     representation of an order of metatrader
-
-    action
-    symbol
-    volume
-    type
-    type_filling
-
     """
-    action: ENUM_TRADE_REQUEST_ACTIONS  # Trade operation type
+    action: ENUM_TRADE_REQUEST_ACTIONS # Trade operation type
     symbol: str  # Trade symbol
     volume: float  # Requested volume for a deal in lots
     sl: float  # Stop Loss level of the order
@@ -108,3 +101,36 @@ class MT5OrderData(OrderData):
     comment: Optional[str]  # OrderData comment
     position: Optional[int]  # Position ticket
     position_by: Optional[int]  # The ticket of an opposite position
+
+
+class ENUM_POSITION_TYPE(Enum):
+    POSITION_TYPE_BUY: 1 #Buy
+    POSITION_TYPE_SELL:0 #Sell
+
+
+@dataclass
+class OandaPositionData:
+    pass
+
+
+@dataclass
+class MT5Position:
+    # PositionGetString()
+    POSITION_SYMBOL: str
+    # PositionGetDouble()
+    POSITION_VOLUME: float  # : Position volume
+    POSITION_SL: float  # : Stop Loss level of opened position
+    POSITION_TP: float  # : Take Profit level of opened position
+    POSITION_PRICE_OPEN: Optional[float]  # : Position open price
+    POSITION_PRICE_CURRENT: Optional[float]  # : Current price of the position symbol
+    POSITION_SWAP: Optional[float]  # : Cumulative swap
+    POSITION_PROFIT: Optional[float]  # : Current profit
+    # PositionGetInteger()
+    POSITION_TICKET: int
+    POSITION_TYPE: ENUM_POSITION_TYPE
+    @property
+    def symbol(self): return self.POSITION_SYMBOL
+    @property
+    def volume(self): return self.POSITION_VOLUME
+
+
