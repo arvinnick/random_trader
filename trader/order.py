@@ -1,8 +1,8 @@
 from abc import ABC
 
-from risk_manager import stop_loss_price_calculator, take_profit_price_calculator, margin_allocator
+from risk_manager.risk_manager import stop_loss_price_calculator, take_profit_price_calculator, margin_allocator
 from platform_boundings import OandaBinding, MT5Binding
-from structs import OandaOrderData, MT5OrderData, ENUM_TRADE_REQUEST_ACTIONS, ENUM_ORDER_TYPE_FILLING, ENUM_ORDER_TYPE
+from trader.structs import MT5OrderData, ENUM_TRADE_REQUEST_ACTIONS, ENUM_ORDER_TYPE_FILLING
 
 
 class Order(ABC):
@@ -56,18 +56,9 @@ class OandaOrder(Order):
         pass
 
 class MT5Order():
-    def __init__(self, direction:int, config):
+    def __init__(self, config):
         self.config = config
         self.binding = MT5Binding()
-        assert direction in {0,1,-1}
-        if direction == 0:
-            self.direction = None
-        elif direction == 1:
-            self.direction = ENUM_ORDER_TYPE.ORDER_TYPE_BUY
-        elif direction == -1:
-            self.direction = ENUM_ORDER_TYPE.ORDER_TYPE_SELL
-        else:
-            raise NotImplementedError(f"the direction is {direction} but it should be 0, 1 or -1")
 
 
     def levels_calculator(self, instrument):

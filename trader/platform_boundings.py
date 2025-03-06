@@ -6,7 +6,7 @@ import oandapyV20
 import oandapyV20.endpoints.orders as orders
 import MetaTrader5 as mt5
 from abc import ABC
-from structs import OrderData, OandaOrderData, MT5OrderData
+from trader.structs import OrderData, OandaOrderData, MT5OrderData
 
 
 class ServerBinding(ABC):

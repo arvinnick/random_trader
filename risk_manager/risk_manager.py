@@ -1,34 +1,60 @@
 # Calculate SL & TP levels
 import random
-from typing import List
+from typing import List, Union, Any
 
-from structs import Position
+from flask import Flask
+
+app = Flask(__name__)
+
+
 
 stop_loss_pips = round(random.uniform(5, 20), 2)
 take_profit_pips = round(random.uniform(10, 50), 2)
 
+def direction_interpreter(direction: Union["buy","short","latheral"],
+                          level:Union["take_profit", "stop_loss"]) -> int:
+    mapping = {
+        'take_profit':{
+            "buy":1, "short":-1, "latheral":0
+        },
+        'stop_loss':{
+            "buy":-1, "short":1, "latheral":0
+        }
+    }
+    return mapping[direction][level]
+
+@app.route('risk/stop_loss', methods=['GET'])
 def stop_loss_price_calculator(current_price:float,
-                               stop_loss_pips:float = stop_loss_pips) -> float:
+                               stop_loss_pips:float = stop_loss_pips,
+                               direction: Union["buy","short","latheral"] = 'latheral') -> Any | None:
     """
     This is a prototype of a function that calculates the stop loss price
     :param current_price: current price in market
     :param stop_loss_pips: the number of pips below the current price
     :return: the level on which we will set the stop loss price
     """
-    return round(current_price + (stop_loss_pips / 10000), 5)  # SL above entry for short
+    direction = direction_interpreter(direction, stop_loss_pips)
+    sl = round(current_price + (direction * (stop_loss_pips / 10000)), 5)
+    app.logger.info(f"stop loss price is calculated as {sl} for {current_price}")
+    return sl
 
+@app.route('risk/take_profit', methods=['GET'])
 def take_profit_price_calculator(current_price:float,
-                                 take_profit_pips:float = take_profit_pips) -> float:
+                                 take_profit_pips:float = take_profit_pips,
+                                 direction: Union[1,-1,0] = 0)-> None:
     """
     This is a prototype of a function that calculates the take profit price
     :param current_price: current price in market
     :param take_profit_pips: the number of pips above the current price
     :return: the level on which we will set the take profit price
     """
-    return round(current_price - (take_profit_pips / 10000), 5)  # TP below entry for short
+    direction = direction_interpreter(direction, stop_loss_pips)
+    tp = round(current_price - ((direction * take_profit_pips) / 10000), 5)
+    app.logger.info(f"take profit price is calculated as {tp} for {current_price}")
+    return tp
 
 
-def margin_allocator(list_of_open_positions:List[Position],
+def margin_allocator(list_of_open_positions:List[str],
                      user_intended_number_of_positions:int,
                      user_intended_symbols:List[str],
                      reserved_margin_percentage:float,

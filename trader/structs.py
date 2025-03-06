@@ -1,5 +1,5 @@
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum
 from typing import Optional
 from xmlrpc.client import DateTime
@@ -112,9 +112,14 @@ class ENUM_POSITION_TYPE(Enum):
 class OandaPositionData:
     pass
 
+@dataclass
+class Position:
+    def serializer(self):
+        return asdict(self)
+
 
 @dataclass
-class MT5Position:
+class MT5Position(Position):
     # PositionGetString()
     POSITION_SYMBOL: str
     # PositionGetDouble()
