@@ -1,6 +1,6 @@
 from abc import ABC
 
-from risk_manager.risk_manager import stop_loss_price_calculator, take_profit_price_calculator, margin_allocator
+from risk_manager.app import stop_loss_price_calculator, take_profit_price_calculator, margin_allocator
 from platform_boundings import OandaBinding, MT5Binding
 from trader.structs import MT5OrderData, ENUM_TRADE_REQUEST_ACTIONS, ENUM_ORDER_TYPE_FILLING
 

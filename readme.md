@@ -32,3 +32,11 @@ The data parser or retriever is a crucial part, heavy to implement. It will get 
 designated sources, according to the configurations. Hopefully all the data are available on API
 resources. Otherwise crawlers should be developed which is tedious work. These retriever
 classes will get the data, encapsulate them and return them back to the analyzer as a response.
+
+
+
+ports:
+* analyzer: 5003
+* scheduler: 5002
+* risk_manager: 5001
+* trader: 5000 (no dockerfile)

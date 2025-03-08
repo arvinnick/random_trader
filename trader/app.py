@@ -3,8 +3,6 @@ from urllib import request
 from flask import Flask,jsonify,request
 import json
 
-from werkzeug.exceptions import NotFound
-
 from order import OandaOrder, MT5Order
 import yaml
 
@@ -28,7 +26,7 @@ def not_implemented(e):
 
 
 
-@app.route('trader/execute', methods=['POST'])
+@app.route('/trader/execute', methods=['POST'])
 async def send_order(
         instrument:str = "EUR_USD"
 ):
@@ -42,7 +40,7 @@ async def send_order(
             order = OandaOrder()
         elif binding == 'mt4':
             app.logger.info("using MetaTrader as the binding to the broker.")
-            order = MT5Order()
+            order = MT5Order(config=app.config)
         else:
             raise NotImplementedError("only MT5 and Oanda APIs are supported, but binding is {} here".format(binding))
         response = order.send_order()
@@ -51,7 +49,7 @@ async def send_order(
 
 
 
-@app.route('trader/account_data/<binding>/<parameter>', methods=['GET'])
+@app.route('/trader/account_data/<binding>/<parameter>', methods=['GET'])
 async def server_binding(binding:str,
                          parameter:str):
     """
@@ -85,3 +83,8 @@ async def server_binding(binding:str,
         pass
     else:
         raise NotImplementedError(f"form data should include open_positions or available_margin or current_price")
+
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
