@@ -17,8 +17,8 @@ def response_builder(direction):
         "status": status
     })
 
-@app.route('/analyzer/direction', methods=['GET'])
-def get_direction():
+@app.route('/analyzer/direction/<currency_pair>', methods=['GET'])
+def get_direction(currency_pair):
     direction = random.choice([0, 1, -1])
     assert direction in {0, 1, -1}
     if direction == 0:

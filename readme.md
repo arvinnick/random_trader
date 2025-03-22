@@ -1,42 +1,57 @@
-needs https://github.com/lucas-campagna/mt5linux?tab=readme-ov-file
-<p>This project intends to make an automated CFD trading system. As long as we have APIs to bind, we can make the code
-working. Currently, I have developed it for MetaTrader and Oanda. </p>
+# Microservices-Based Trading System
 
-<p>So, here is the architecture of the project:</p>
+## Overview
+This project is a microservices-based automated trading system designed to operate with MetaTrader 5 (MT5). The system consists of multiple containerized services that communicate via APIs. The Expert Advisor (EA) in MT5 interacts with these services to make trading decisions, set risk parameters, and analyze market conditions.
 
-![img.png](img.png)
+![containers and their API interactions.jpg](containers and their API interactions.jpg)
 
-1. Scheduler:<br>
-Using Celery, python scheduler module or something else, triggers trade signals in intervals.
-API endpoint: trigger containing demo/real signal. The scheduler is supposed to be the main
-service
-2. Trader:<br>
-It controls everything. Makes a trade object, fills the gaps of that trade with api calls from
-analyzer and risk manager and OANDA API, gets the credentials from database, sends it to
-OANDA, then creates its entity in the database and later tracks the results of that trade and
-updates the entity in the database.
-3. Risk Manager:<br>
-This module is the one that will set the take profit and stop loss levels. Trader will send a
-request to it, asking for the level with a certain payload (including the market price as well as
-other stuff that will be defined by domain experts). The risk manager will take the payload,
-analyse it and responses with the sl, tp levels. For public repository, the levels will be a certain
-degree below or above the current market price. The actual module will be kept as a trade
-secret.
-4. Analyzer:<br>
-Trader sends a request to the analyser asking for the market situation for a particular pair (or
-stock or anything else). The analyzer takes the data related to that pair, computes what it needs
-and then returns back the market situation by categorical data [‘bull’, ‘bear’, ’lateral’] to the
-trader.
-5. Data parser/retriever:<br>
-The data parser or retriever is a crucial part, heavy to implement. It will get the data from
-designated sources, according to the configurations. Hopefully all the data are available on API
-resources. Otherwise crawlers should be developed which is tedious work. These retriever
-classes will get the data, encapsulate them and return them back to the analyzer as a response.
+## Microservices Architecture
 
+### 1. **Trader (Expert Advisor on MT5)**
+- Runs on MetaTrader 5 (MT5) as an Expert Advisor (EA).
+- Calls the various microservices to determine trading actions.
+- Places buy/sell orders and sets Stop Loss (SL) and Take Profit (TP) levels based on API responses.
 
+### 2. **Risk Manager (Port: 5001)**
+- Evaluates the market price and other parameters.
+- Determines the appropriate SL and TP levels.
+- Returns these levels to the Trader for execution.
 
-ports:
-* analyzer: 5003
-* scheduler: 5002
-* risk_manager: 5001
-* trader: 5000 (no dockerfile)
+### 3. **Analyzer (Port: 5003)**
+- Receives requests from the Trader to analyze market conditions.
+- Returns a categorical market situation: `bull`, `bear`, or `lateral`.
+- Helps the Trader decide whether to buy, sell, or hold.
+
+### 4. **Data Parser/Retriever**
+- Fetches market data from designated sources (APIs, crawlers, etc.).
+- Provides structured data to the Analyzer for computation.
+- Ensures data consistency and accuracy.
+
+### 5. **ORM (Database Binding)**
+- Stores trade records for future analysis.
+- Maintains historical market data.
+- Facilitates backtesting and performance evaluation.
+
+## API Communication
+- **Trader → Analyzer** (`GET http://localhost:5003/analyzer/direction/{currency_pair}`)
+    - Returns the trading direction: `ORDER_TYPE_BUY`, `ORDER_TYPE_SELL`, or `None` (for lateral market conditions).
+
+- **Trader → Risk Manager** (`GET http://localhost:5001/risk/{type}/{price}`)
+    - `type` can be `stop_loss` or `take_profit`.
+    - Returns appropriate SL or TP levels based on the current market price.
+
+## Deployment
+- **Analyzer, Risk Manager, Data Parser, and ORM** are containerized and communicate via REST APIs.
+- The **Expert Advisor** is manually installed on MetaTrader 5 and interacts with the APIs.
+
+## Future Enhancements
+- Implement more advanced risk assessment in the Risk Manager.
+- Expand the Analyzer with AI-based prediction models.
+- Improve data retrieval with more efficient API integration.
+
+## Notes
+- Ensure that all microservices are running before launching the Expert Advisor in MT5.
+- The public repository provides a simplified version of SL/TP calculation for demonstration purposes.
+
+This document serves as a high-level guide to the system's architecture and functionality. For implementation details, refer to individual service documentation.
+

@@ -1,4 +1,6 @@
 # Calculate SL & TP levels
+from __future__ import annotations
+
 import random
 from typing import List, Union, Any
 from flask import Flask, jsonify, Response, Request
@@ -57,18 +59,14 @@ def take_profit_price_calculator(current_price:float,
 def margin_allocator(request:Request) -> dict[Any, Any] | Response:
     """
     the function is a prototype of a function that calculates the margin allocation
-    :param account_liquidity:
-    :param reserved_margin_percentage:
-    :param user_intended_symbols:
-    :param list_of_open_positions:
-    :param user_intended_number_of_positions: the number of positions user wants to open
+    :param request: Flask API request
     :return: dictionary, indicating how much margin is being allocated to each symbol-position
     """
-    list_of_open_positions = request.form['open_positions']
-    user_intended_number_of_positions = request.form['number_of_positions']
-    user_intended_symbols = request.form['intended_symbols']
-    reserved_margin_percentage = request.form['reserved_margin_percentage']
-    account_liquidity = request.form['account_liquidity']
+    list_of_open_positions = request.json['open_positions']
+    user_intended_number_of_positions = request.json['number_of_positions']
+    user_intended_symbols = request.json['intended_symbols']
+    reserved_margin_percentage = request.json['reserved_margin_percentage']
+    account_liquidity = request.json['account_liquidity']
     assert user_intended_number_of_positions.isdigit(); app.logger.error(f"the number of positions is {user_intended_number_of_positions} which is not a number")
     if len(list_of_open_positions) >= int(user_intended_number_of_positions):
         return {}
