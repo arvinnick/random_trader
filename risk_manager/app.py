@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import random
-from typing import List, Union, Any
-from flask import Flask, jsonify, Response, Request
+from typing import Union, Any
+
+import yaml
+from flask import Flask, jsonify, Response, request
 
 app = Flask(__name__)
 
@@ -11,6 +13,8 @@ app = Flask(__name__)
 
 stop_loss_pips = round(random.uniform(5, 20), 2)
 take_profit_pips = round(random.uniform(10, 50), 2)
+
+CONFIG_FILE = "config.yaml"
 
 def direction_interpreter(direction: Union["buy","short","latheral"],
                           level:Union["take_profit", "stop_loss"]) -> int:
@@ -24,67 +28,107 @@ def direction_interpreter(direction: Union["buy","short","latheral"],
     }
     return mapping[level][direction]
 
-@app.route('/risk/stop_loss/<current_price>', methods=['GET'])
-def stop_loss_price_calculator(current_price:float,
-                               stop_loss_pips:float = stop_loss_pips,
-                               trade_direction: Union["buy","short","latheral"] = 'latheral') -> Any | None:
-    """
-    This is a prototype of a function that calculates the stop loss price
-    :param trade_direction: the direction of the trade. used to determine the position of the stop loss price
-    :param current_price: current price in market
-    :param stop_loss_pips: the number of pips below the current price
-    :return: the level on which we will set the stop loss price
-    """
-    direction = direction_interpreter(trade_direction, "stop_loss")
-    sl = round(float(current_price) + (direction * (stop_loss_pips / 10000)), 5)
-    app.logger.info(f"stop loss price is calculated as {sl} for {current_price}")
-    return jsonify({"stop loss":sl})
+def config_loader(config_file:str) -> dict[Any, Any]:
+    with open(config_file, 'r') as f:
+        config = yaml.safe_load(f)
+    return config
 
-@app.route('/risk/take_profit/<current_price>', methods=['GET'])
-def take_profit_price_calculator(current_price:float,
-                                 take_profit_pips:float = take_profit_pips,
-                                 direction: Union[1,-1,0] = 0)-> Response:
-    """
-    This is a prototype of a function that calculates the take profit price
-    :param current_price: current price in market
-    :param take_profit_pips: the number of pips above the current price
-    :return: the level on which we will set the take profit price
-    """
-    direction = direction_interpreter(direction, "take_profit")
-    tp = round(float(current_price) - ((direction * take_profit_pips) / 10000), 5)
-    app.logger.info(f"take profit price is calculated as {tp} for {current_price}")
-    return jsonify({"take profit":tp})
 
-@app.route('/risk/margin_allocator/', methods=['GET'])
-def margin_allocator(request:Request) -> dict[Any, Any] | Response:
+@app.route('/risk/levels/', methods=['POST'])
+def levels_calculator(take_profit_pips: float = take_profit_pips,
+                      stop_loss_pips: float = stop_loss_pips) -> Response:
     """
-    the function is a prototype of a function that calculates the margin allocation
-    :param request: Flask API request
-    :return: dictionary, indicating how much margin is being allocated to each symbol-position
+    Calculate the take profit and stop loss prices based on current price and trade direction.
+    ---
+    parameters:
+      - name: current_price
+        in: formData
+        type: number
+        required: true
+        description: Current market price.
+      - name: trade_direction
+        in: formData
+        type: string
+        required: true
+        enum: ["buy", "short", "latheral"]
+        description: Trade direction ("buy", "short", or "latheral").
+      - name: take_profit_pips
+        in: formData
+        type: number
+        required: false
+        description: Number of pips for take profit. (Optional, defaults to random)
+      - name: stop_loss_pips
+        in: formData
+        type: number
+        required: false
+        description: Number of pips for stop loss. (Optional, defaults to random)
+    responses:
+      200:
+        description: Take profit and stop loss prices calculated successfully.
+        schema:
+          type: object
+          properties:
+            take_profit:
+              type: number
+              example: 1.23456
+            stop_loss:
+              type: number
+              example: 1.23300
     """
+    current_price = request.form.get('current_price')
+    trade_direction = request.form.get('trade_direction')
+    tp_direction = direction_interpreter(trade_direction, "take_profit")
+    sl_direction = direction_interpreter(trade_direction, "stop_loss")
+    tp = round(float(current_price) - ((tp_direction * take_profit_pips) / 10000), 5)
+    sl = round(float(current_price) - ((sl_direction * stop_loss_pips) / 10000), 5)
+    app.logger.info(f"Take profit and stop loss prices calculated as {tp}, {sl} for {current_price}")
+    return jsonify({"take_profit": tp, "stop_loss": sl})
+
+
+
+@app.route('/risk/margin_allocator/', methods=['POST'])
+def margin_allocator() -> dict[Any, Any] | Response:
+    """
+    Allocate margin across intended trading positions.
+    ---
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            open_positions:
+              type: array
+              items:
+                type: object
+                properties:
+                  symbol:
+                    type: string
+                  volume:
+                    type: number
+            account_liquidity:
+              type: number
+              description: Total account liquidity
+    responses:
+      200:
+        description: Allocated margin for each symbol
+        schema:
+          type: object
+          additionalProperties:
+            type: number
+    """
+    config = config_loader(CONFIG_FILE)
+    reserved_margin_percentage = config['reservedMarginPercentage']
     list_of_open_positions = request.json['open_positions']
-    user_intended_number_of_positions = request.json['number_of_positions']
-    user_intended_symbols = request.json['intended_symbols']
-    reserved_margin_percentage = request.json['reserved_margin_percentage']
     account_liquidity = request.json['account_liquidity']
-    assert user_intended_number_of_positions.isdigit(); app.logger.error(f"the number of positions is {user_intended_number_of_positions} which is not a number")
-    if len(list_of_open_positions) >= int(user_intended_number_of_positions):
-        return {}
-    iterative_list_of_symbols =[]
-    not_traded_symbols = [
-        symbol for symbol in user_intended_symbols if symbol not in [
-            open_position.symbol for open_position in list_of_open_positions
-        ]
-    ]
-    random.shuffle(not_traded_symbols)
-    iterative_list_of_symbols.extend(not_traded_symbols)
-    for symbol in user_intended_symbols:
-        if symbol not in not_traded_symbols and len(iterative_list_of_symbols) < user_intended_number_of_positions:
-            iterative_list_of_symbols.append(symbol)
     tradable_margin = account_liquidity * (1 - reserved_margin_percentage)
     remaining_margin = tradable_margin - sum([position.volume for position in list_of_open_positions])
-    allocated_margin = remaining_margin / len(iterative_list_of_symbols)
-    return jsonify({symbol: allocated_margin for symbol in iterative_list_of_symbols})
+    allocated_margin = round(remaining_margin / len(list_of_open_positions), 5)
+    app.logger.info(f"allocated margin is {allocated_margin} for {len(list_of_open_positions)} positions")
+    return jsonify({"allocated_margin": allocated_margin})
 
 if __name__ == '__main__':
     app.run(debug=True)
