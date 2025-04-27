@@ -14,7 +14,7 @@ This project is a microservices-based automated trading system designed to opera
 
 ### 2. **Risk Manager (Port: 5001)**
 - Evaluates the market price and other parameters.
-- Determines the appropriate SL and TP levels.
+- Determines the appropriate SL and TP levels as well as the allocated margine to the trade action.
 - Returns these levels to the Trader for execution.
 
 ### 3. **Analyzer (Port: 5003)**
