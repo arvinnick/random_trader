@@ -1,1 +1,3 @@
-reservedMarginPercentage:0.2
+reservedMarginPercentage: 0.2
+maxVolumePerTrade: 1000
+numberOfIntendedOpenPositions: 5

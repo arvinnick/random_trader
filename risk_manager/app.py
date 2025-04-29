@@ -14,7 +14,11 @@ risk_app = Flask(__name__)
 stop_loss_pips = round(random.uniform(5, 20), 2)
 take_profit_pips = round(random.uniform(10, 50), 2)
 
-CONFIG_FILE = "config.yaml"
+CONFIG_FILE = f"{risk_app.config.root_path}/riskConfig.yaml"
+with open(CONFIG_FILE) as f:
+    config = yaml.safe_load(f)
+if not risk_app.config.get("TESTING"):
+    risk_app.config.update(config)
 
 def direction_interpreter(direction: Union["buy","short","latheral"],
                           level:Union["take_profit", "stop_loss"]) -> int:
@@ -28,10 +32,7 @@ def direction_interpreter(direction: Union["buy","short","latheral"],
     }
     return mapping.get(level).get(direction)
 
-def config_loader(config_file:str) -> dict[Any, Any]:
-    with open(config_file, 'r') as f:
-        config = yaml.safe_load(f)
-    return config
+
 
 
 @risk_app.route('/risk/levels/', methods=['POST'])
@@ -93,7 +94,8 @@ def levels_calculator(take_profit_pips: float = take_profit_pips,
 @risk_app.route('/risk/margin_allocator/', methods=['POST'])
 def margin_allocator() -> dict[Any, Any] | Response:
     """
-    Allocate margin across intended trading positions.
+    Allocate margin across intended trading position. The endpoint is going to be used by a MQL4 EA. So, it doesn't take
+    more than a single trading symbol.
     ---
     consumes:
       - application/json
@@ -111,11 +113,12 @@ def margin_allocator() -> dict[Any, Any] | Response:
                 properties:
                   symbol:
                     type: string
-                  volume:
-                    type: number
             account_liquidity:
               type: number
               description: Total account liquidity
+            available_margin:
+              type: number
+              description: Total available margin on account
     responses:
       200:
         description: Allocated margin for each symbol
@@ -124,15 +127,19 @@ def margin_allocator() -> dict[Any, Any] | Response:
           additionalProperties:
             type: number
     """
-    config = config_loader(CONFIG_FILE)
-    reserved_margin_percentage = config['reservedMarginPercentage']
+    reserved_margin_percentage = risk_app.config['reservedMarginPercentage']
+    max_volume_per_trade = risk_app.config['maxVolumePerTrade']
     list_of_open_positions = request.json['open_positions']
+    available_margin = request.json['available_margin']
+    number_of_intended_position = risk_app.config['numberOfIntendedOpenPositions']
     account_liquidity = request.json['account_liquidity']
     tradable_margin = account_liquidity * (1 - reserved_margin_percentage)
-    remaining_margin = tradable_margin - sum([position.volume for position in list_of_open_positions])
-    allocated_margin = round(remaining_margin / len(list_of_open_positions), 5)
+    allocated_margin = round(tradable_margin / number_of_intended_position, 5)
     risk_app.logger.info(f"allocated margin is {allocated_margin} for {len(list_of_open_positions)} positions")
-    return jsonify({"allocated_margin": allocated_margin})
+    remaining_margin = available_margin - (account_liquidity * reserved_margin_percentage)
+    return jsonify({"allocated_margin": min([allocated_margin,
+                                             max_volume_per_trade,
+                                             remaining_margin])})
 
 if __name__ == '__main__':
     risk_app.run(debug=True)

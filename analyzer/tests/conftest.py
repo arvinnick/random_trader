@@ -6,12 +6,6 @@ from risk_manager.app import risk_app
 def fix_app():
     risk_app.config['TESTING'] = True
     #setup
-    risk_app.fixture_level = 1.2345
-    risk_app.config.update({
-        "reservedMarginPercentage": 0.2,
-        "maxVolumePerTrade": 400,
-        "numberOfIntendedOpenPositions": 5
-    })
     yield risk_app
     #teardown
 
@@ -24,5 +18,3 @@ def client(fix_app):
 @pytest.fixture()
 def runner(fix_app):
     return fix_app.test_cli_runner()
-
-
