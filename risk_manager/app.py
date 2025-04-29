@@ -7,7 +7,7 @@ from typing import Union, Any
 import yaml
 from flask import Flask, jsonify, Response, request
 
-app = Flask(__name__)
+risk_app = Flask(__name__)
 
 
 
@@ -26,7 +26,7 @@ def direction_interpreter(direction: Union["buy","short","latheral"],
             "buy":-1, "short":1, "latheral":0
         }
     }
-    return mapping[level][direction]
+    return mapping.get(level).get(direction)
 
 def config_loader(config_file:str) -> dict[Any, Any]:
     with open(config_file, 'r') as f:
@@ -34,7 +34,7 @@ def config_loader(config_file:str) -> dict[Any, Any]:
     return config
 
 
-@app.route('/risk/levels/', methods=['POST'])
+@risk_app.route('/risk/levels/', methods=['POST'])
 def levels_calculator(take_profit_pips: float = take_profit_pips,
                       stop_loss_pips: float = stop_loss_pips) -> Response:
     """
@@ -75,18 +75,22 @@ def levels_calculator(take_profit_pips: float = take_profit_pips,
               type: number
               example: 1.23300
     """
+    if take_profit_pips < 0 or stop_loss_pips < 0:
+        return Response("take profit and stop loss pips cannot be negative", status=400)
     current_price = request.form.get('current_price')
     trade_direction = request.form.get('trade_direction')
     tp_direction = direction_interpreter(trade_direction, "take_profit")
     sl_direction = direction_interpreter(trade_direction, "stop_loss")
-    tp = round(float(current_price) - ((tp_direction * take_profit_pips) / 10000), 5)
-    sl = round(float(current_price) - ((sl_direction * stop_loss_pips) / 10000), 5)
-    app.logger.info(f"Take profit and stop loss prices calculated as {tp}, {sl} for {current_price}")
+    if tp_direction is None or sl_direction is None:
+        return Response(f"trade direction {trade_direction} is not supported", status=400)
+    tp = round(float(current_price) + ((tp_direction * take_profit_pips) / 10000), 5)
+    sl = round(float(current_price) + ((sl_direction * stop_loss_pips) / 10000), 5)
+    risk_app.logger.info(f"Take profit and stop loss prices calculated as {tp}, {sl} for {current_price}")
     return jsonify({"take_profit": tp, "stop_loss": sl})
 
 
 
-@app.route('/risk/margin_allocator/', methods=['POST'])
+@risk_app.route('/risk/margin_allocator/', methods=['POST'])
 def margin_allocator() -> dict[Any, Any] | Response:
     """
     Allocate margin across intended trading positions.
@@ -127,8 +131,8 @@ def margin_allocator() -> dict[Any, Any] | Response:
     tradable_margin = account_liquidity * (1 - reserved_margin_percentage)
     remaining_margin = tradable_margin - sum([position.volume for position in list_of_open_positions])
     allocated_margin = round(remaining_margin / len(list_of_open_positions), 5)
-    app.logger.info(f"allocated margin is {allocated_margin} for {len(list_of_open_positions)} positions")
+    risk_app.logger.info(f"allocated margin is {allocated_margin} for {len(list_of_open_positions)} positions")
     return jsonify({"allocated_margin": allocated_margin})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    risk_app.run(debug=True)
