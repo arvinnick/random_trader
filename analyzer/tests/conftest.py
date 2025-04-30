@@ -1,12 +1,12 @@
 import pytest
-from risk_manager.app import risk_app
+from analyzer.analyze_app import analyze_app
 
 
 @pytest.fixture()
 def fix_app():
-    risk_app.config['TESTING'] = True
+    analyze_app.config['TESTING'] = True
     #setup
-    yield risk_app
+    yield analyze_app
     #teardown
 
 

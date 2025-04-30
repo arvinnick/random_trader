@@ -1,14 +1,15 @@
 
 import random
-from dataclasses import asdict
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
-from structs import ENUM_ORDER_TYPE
+from .structs import ENUM_ORDER_TYPE
+from utils.logging import log_handling
 
-app = Flask(__name__)
+analyze_app = Flask(__name__)
 
-logger = app.logger
+
+logger = log_handling(analyze_app)
 
 def response_builder(direction):
     status = 200
@@ -17,12 +18,14 @@ def response_builder(direction):
         "status": status
     })
 
-@app.route('/analyzer/direction/<currency_pair>', methods=['GET'])
-def get_direction(currency_pair):
+@analyze_app.route('/analyzer/direction/', methods=['POST'])
+def get_direction():
+    form_data = request.get_json()
+    currency_pair = form_data.get('currency_pair')
     direction = random.choice([0, 1, -1])
     assert direction in {0, 1, -1}
     if direction == 0:
-        logger.info("direction is latherl")
+        logger.info("direction is lateral")
         return response_builder(None)
     elif direction == 1:
         return response_builder(ENUM_ORDER_TYPE.ORDER_TYPE_BUY.value)

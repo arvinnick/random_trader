@@ -1,11 +1,13 @@
-# Calculate SL & TP levels
+# Calculate SL & TP levels. Allocate margin across intended trading position.
 from __future__ import annotations
 
 import random
 from typing import Union, Any
 
-import yaml
+import yaml, logging
 from flask import Flask, jsonify, Response, request
+
+from utils.logging import log_handling
 
 risk_app = Flask(__name__)
 
@@ -19,6 +21,9 @@ with open(CONFIG_FILE) as f:
     config = yaml.safe_load(f)
 if not risk_app.config.get("TESTING"):
     risk_app.config.update(config)
+
+logger = log_handling(risk_app)
+
 
 def direction_interpreter(direction: Union["buy","short","latheral"],
                           level:Union["take_profit", "stop_loss"]) -> int:

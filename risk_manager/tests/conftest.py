@@ -1,5 +1,5 @@
 import pytest
-from risk_manager.app import risk_app
+from risk_manager.risk_manager_app import risk_app
 
 
 @pytest.fixture()
