@@ -4,12 +4,12 @@ from __future__ import annotations
 import random
 from typing import Union, Any
 
-import yaml, logging
+import yaml
 from flask import Flask, jsonify, Response, request
 
-from utils.logging import log_handling
+from .utils import log_handling
 
-risk_app = Flask(__name__)
+risk_app = Flask("risk_manager")
 
 
 
@@ -83,8 +83,9 @@ def levels_calculator(take_profit_pips: float = take_profit_pips,
     """
     if take_profit_pips < 0 or stop_loss_pips < 0:
         return Response("take profit and stop loss pips cannot be negative", status=400)
-    current_price = request.form.get('current_price')
-    trade_direction = request.form.get('trade_direction')
+    data = request.get_json()
+    current_price = data.get('current_price')
+    trade_direction = data.get('trade_direction')
     tp_direction = direction_interpreter(trade_direction, "take_profit")
     sl_direction = direction_interpreter(trade_direction, "stop_loss")
     if tp_direction is None or sl_direction is None:

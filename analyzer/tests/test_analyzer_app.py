@@ -10,4 +10,4 @@ def test_not_enough_margin(client):
     assert response.status_code == 200
     data = response.get_json()
     assert 'direction' in data
-    assert data['direction'] in {0, 1, -1}
+    assert data['direction'] in {0, 1, None}

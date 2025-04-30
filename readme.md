@@ -21,6 +21,12 @@ This project is a microservices-based automated trading system designed to opera
 - Receives requests from the Trader to analyze market conditions.
 - Returns a categorical market situation: `bull`, `bear`, or `lateral`.
 - Helps the Trader decide whether to buy, sell, or hold.
+#### how to run:
+from the main directory (the same directory in which this readme is located) run this commmands:
+  ```
+  docker build -f ./anlyzer/Dockerfile -t analyzer analyzer/
+  
+  ```
 
 ### 4. **Data Parser/Retriever**
 - Fetches market data from designated sources (APIs, crawlers, etc.).

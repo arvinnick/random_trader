@@ -1,5 +1,5 @@
 import pytest
-from analyzer.analyze_app import analyze_app
+from analyzer.app import analyze_app
 
 
 @pytest.fixture()

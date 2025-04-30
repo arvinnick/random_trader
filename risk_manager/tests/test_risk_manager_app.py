@@ -1,7 +1,7 @@
 import pytest
 
 def test_levels_calculator_success(client):
-    response = client.post('/risk/levels/', data={
+    response = client.post('/risk/levels/', json={
         'current_price': client.application.fixture_level,
         'trade_direction': 'buy',
         'take_profit_pips': 20,
@@ -17,7 +17,7 @@ def test_levels_calculator_success(client):
 
 
 def test_levels_calculator_missing_optional(client):
-    response = client.post('/risk/levels/', data={
+    response = client.post('/risk/levels/', json={
         'current_price': client.application.fixture_level,
         'trade_direction': 'short'
     })
@@ -31,7 +31,7 @@ def test_levels_calculator_missing_optional(client):
 
 
 def test_levels_calculator_invalid_direction(client):
-    response = client.post('/risk/levels/', data={
+    response = client.post('/risk/levels/', json={
         'current_price': client.application.fixture_level,
         'trade_direction': 'booy',
         'take_profit_pips': 15,
@@ -42,7 +42,7 @@ def test_levels_calculator_invalid_direction(client):
 
 
 def test_levels_calculator_missing_required(client):
-    response = client.post('/risk/levels/', data={
+    response = client.post('/risk/levels/', json={
         'take_profit_pips': 15,
         'stop_loss_pips': 5
     })

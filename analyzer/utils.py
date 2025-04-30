@@ -1,5 +1,7 @@
-from flask import Flask
 import logging
+
+from flask import Flask
+
 
 def log_handling(app: Flask):
     logger = app.logger
