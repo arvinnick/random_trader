@@ -21,12 +21,7 @@ This project is a microservices-based automated trading system designed to opera
 - Receives requests from the Trader to analyze market conditions.
 - Returns a categorical market situation: `bull`, `bear`, or `lateral`.
 - Helps the Trader decide whether to buy, sell, or hold.
-#### how to run:
-from the main directory (the same directory in which this readme is located) run this commmands:
-  ```
-  docker build -f ./anlyzer/Dockerfile -t analyzer analyzer/
-  
-  ```
+
 
 ### 4. **Data Parser/Retriever**
 - Fetches market data from designated sources (APIs, crawlers, etc.).
@@ -39,10 +34,10 @@ from the main directory (the same directory in which this readme is located) run
 - Facilitates backtesting and performance evaluation.
 
 ## API Communication
-- **Trader → Analyzer** (`GET http://localhost:5003/analyzer/direction/{currency_pair}`)
+- **Trader → Analyzer** (`GET http://localhost:5003/analyzer/direction/`)
     - Returns the trading direction: `ORDER_TYPE_BUY`, `ORDER_TYPE_SELL`, or `None` (for lateral market conditions).
 
-- **Trader → Risk Manager** (`GET http://localhost:5001/risk/{type}/{price}`)
+- **Trader → Risk Manager** (`GET http://localhost:5001/risk/`)
     - `type` can be `stop_loss` or `take_profit`.
     - Returns appropriate SL or TP levels based on the current market price.
 
@@ -61,3 +56,7 @@ from the main directory (the same directory in which this readme is located) run
 
 This document serves as a high-level guide to the system's architecture and functionality. For implementation details, refer to individual service documentation.
 
+## how to run:
+1. run the dockerfiles in risk manger and analyzer microservices
+2. load the EA in trader folder on MetaTrader charts
+3. watch carefully (just kidding, do the dishes while the system is working)
