@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  trader:
+    build: ./trader  # Path to your Trader Dockerfile
+    container_name: trader
+    ports:
+      - "80:80"
+    depends_on:
+      - analyzer
+      - risk-manager
+    networks:
+      - app-net
+
+  analyzer:
+    build: ./analyzer  # Path to your Analyzer Dockerfile
+    container_name: analyzer
+    ports:
+      - "5003:5003"
+    networks:
+      - app-net
+
+  risk-manager:
+    build: ./risk_manager  # Path to your Risk Manager Dockerfile
+    container_name: risk-manager
+    ports:
+      - "5001:5001"
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge

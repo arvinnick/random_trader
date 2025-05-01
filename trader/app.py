@@ -33,6 +33,18 @@ logger = log_handling(trader_app)
 def trade_endpoint():
     payload = request.get_json()
     request_identifier = payload.get("request_identifier")
+    for key in ["current_price", "currency_pair", "open_positions",
+                "account_liquidity", "available_margin", "request_identifier"]:
+        if key not in payload:
+            logger.error(f"missing key {key} in payload")
+            return jsonify(message=f"missing key {key} in payload", status=400)
+        if key == "open_positions":
+            for position in payload.get("open_positions"):
+                for key in ["symbol", "volume"]:
+                    if key not in position:
+                        logger.error(f"missing key {key} in open positions")
+                        return jsonify(message=f"missing key {key} in one of the open positions",
+                                       status=400)
 
     #analyze
     currency_pair = payload.get("currency_pair")

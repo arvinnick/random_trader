@@ -57,6 +57,21 @@ This project is a microservices-based automated trading system designed to opera
 This document serves as a high-level guide to the system's architecture and functionality. For implementation details, refer to individual service documentation.
 
 ## how to run:
-1. run the dockerfiles in risk manger and analyzer microservices
-2. load the EA in trader folder on MetaTrader charts
-3. watch carefully (just kidding, do the dishes while the system is working)
+1. run the docker compose file
+sample request payload:
+  ```json
+   {
+     "request_identifier": 12345,
+     "current_price": 1.2345,
+     "currency_pair":"EURUSD",
+     "open_positions": 
+       [
+         {"symbol": "EURUSD", "volume": 400},
+         {"symbol": "USDCHF", "volume": 400},
+         {"symbol": "GBPUSD", "volume": 400},
+         {"symbol": "AUDUSD", "volume": 400}
+       ],
+     "account_liquidity": 2800,
+     "available_margin": 800
+   }
+```
