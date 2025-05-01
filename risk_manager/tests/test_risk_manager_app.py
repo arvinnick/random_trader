@@ -3,9 +3,7 @@ import pytest
 def test_levels_calculator_success(client):
     response = client.post('/risk/levels/', json={
         'current_price': client.application.fixture_level,
-        'trade_direction': 'buy',
-        'take_profit_pips': 20,
-        'stop_loss_pips': 10
+        'trade_direction': 'buy'
     })
 
     assert response.status_code == 200
@@ -33,19 +31,14 @@ def test_levels_calculator_missing_optional(client):
 def test_levels_calculator_invalid_direction(client):
     response = client.post('/risk/levels/', json={
         'current_price': client.application.fixture_level,
-        'trade_direction': 'booy',
-        'take_profit_pips': 15,
-        'stop_loss_pips': 5
+        'trade_direction': 'booy'
     })
 
     assert response.status_code == 400
 
 
 def test_levels_calculator_missing_required(client):
-    response = client.post('/risk/levels/', json={
-        'take_profit_pips': 15,
-        'stop_loss_pips': 5
-    })
+    response = client.post('/risk/levels/', json={})
 
     assert response.status_code == 400
 

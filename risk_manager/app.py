@@ -13,8 +13,8 @@ risk_app = Flask("risk_manager")
 
 
 
-stop_loss_pips = round(random.uniform(5, 20), 2)
-take_profit_pips = round(random.uniform(10, 50), 2)
+def stop_loss_pips_calculator(): return round(random.uniform(5, 20), 2)
+def take_profit_pips_calculator(): return round(random.uniform(10, 50), 2)
 
 CONFIG_FILE = f"{risk_app.config.root_path}/riskConfig.yaml"
 with open(CONFIG_FILE) as f:
@@ -41,8 +41,7 @@ def direction_interpreter(direction: Union["buy","short","latheral"],
 
 
 @risk_app.route('/risk/levels/', methods=['POST'])
-def levels_calculator(take_profit_pips: float = take_profit_pips,
-                      stop_loss_pips: float = stop_loss_pips) -> Response:
+def levels_calculator() -> Response:
     """
     Calculate the take profit and stop loss prices based on current price and trade direction.
     ---
@@ -58,16 +57,7 @@ def levels_calculator(take_profit_pips: float = take_profit_pips,
         required: true
         enum: ["buy", "short", "latheral"]
         description: Trade direction ("buy", "short", or "latheral").
-      - name: take_profit_pips
-        in: formData
-        type: number
-        required: false
-        description: Number of pips for take profit. (Optional, defaults to random)
-      - name: stop_loss_pips
-        in: formData
-        type: number
-        required: false
-        description: Number of pips for stop loss. (Optional, defaults to random)
+
     responses:
       200:
         description: Take profit and stop loss prices calculated successfully.
@@ -81,6 +71,8 @@ def levels_calculator(take_profit_pips: float = take_profit_pips,
               type: number
               example: 1.23300
     """
+    stop_loss_pips = stop_loss_pips_calculator()
+    take_profit_pips = take_profit_pips_calculator()
     if take_profit_pips < 0 or stop_loss_pips < 0:
         return Response("take profit and stop loss pips cannot be negative", status=400)
     data = request.get_json()

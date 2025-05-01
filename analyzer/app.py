@@ -4,7 +4,7 @@ import random
 from flask import Flask, jsonify, request
 
 from .structs import ENUM_ORDER_TYPE
-from utils import log_handling
+from .utils import log_handling
 
 analyze_app = Flask("analyzer")
 
