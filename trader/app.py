@@ -29,6 +29,8 @@ if not trader_app.config.get("TESTING"):
 logger = log_handling(trader_app)
 
 
+
+
 @trader_app.route('/', methods=['POST'])
 def trade_endpoint():
     payload = request.get_json()

@@ -1,0 +1,21 @@
+risk_manager:
+  host: risk-manager
+  port: 5001
+  endpoints:
+      levels:
+        endpoint: /risk/levels/
+        method: POST
+      margin_allocator:
+        endpoint: /risk/margin_allocator/
+        method: POST
+analyzer:
+  host: analyzer
+  port: 5003
+  endpoints:
+      direction:
+          endpoint: /analyzer/direction/
+          method: POST
+
+directions:
+  1: short
+  0: buy

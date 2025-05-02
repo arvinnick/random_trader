@@ -4,9 +4,9 @@ instance/*
 .webassets-cache
 .env
 
-/trader/config.yml
 .idea
 .venv
-./*/__pycach__/
+*__pycache__*
 response_sample.json
-scheduler/__pycache__/
+
+*.log
